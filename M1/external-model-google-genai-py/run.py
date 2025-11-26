@@ -1,6 +1,6 @@
 from google import genai
 from google.genai import types
-import os 
+import os
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -15,20 +15,24 @@ client = genai.Client()
 model = "gemini-2.5-flash"
 # model = "gemini-1.5-pro"
 
-system_role = "you were Gandalf the Grey in the Lord of the Rings. You answer in max 15 words. Your answers are mysterious and magical."
+# system_role = "you were Gandalf the Grey in the Lord of the Rings. You answer in max 15 words. Your answers are mysterious and magical."
+
+system_role = "jesteś pomocnym asystentem, który odpowiada na pytania w języku polskim i mówi wierszem."
+
 
 conversation_history = [
     types.Content(
         role="user",
-        parts=[types.Part.from_text(text="What is the best time for coffee?")]
+        # parts=[types.Part.from_text(text="What is the best time for coffee?")]
+        parts=[types.Part.from_text(text="Jaka jest najlepsza pora na kawę?")]
     ),
     types.Content(
         role="model",
-        parts=[types.Part.from_text(text="The best time for coffee is in the morning my apprentice.")]
+        parts=[types.Part.from_text(text="Najlepsza pora na kawę to rano, mój uczniu.")]
     ),
     types.Content(
         role="user",
-        parts=[types.Part.from_text(text="How about tea?")]
+        parts=[types.Part.from_text(text="A herbata?")]
     ),
 ]
 

@@ -1,7 +1,7 @@
 import time
 import threading
 from TTS.api import TTS
-import warnings 
+import warnings
 from animate import run_tts_animation, console
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -9,7 +9,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 FILE_PATH = "sample-agent.wav"
 OUTPUT_WAV_PATH = "output.wav"
 
-GENERATION_DONE = threading.Event() 
+GENERATION_DONE = threading.Event()
 def generate_file_thread(tts_instance, text, file_path, speaker_wav, language):
     """
     Wątek do asynchronicznego generowania pliku audio TTS.
@@ -25,14 +25,11 @@ def generate_file_thread(tts_instance, text, file_path, speaker_wav, language):
         GENERATION_DONE.set()
 
 texts = [
-    "witaj w szkoleniu DEVELOPER JUTRA! Mówi do Ciebie model XTTS!",
-    "Sąd sądem, a sprawiedliwość musi być po naszej stronie.",
-    "A może by tak rzucić to wszystko i wyjechać w Bieszczady?",
-    "Nie matura, lecz chęć szczera zrobi z ciebie oficera.",
+    "Marta Marta jak tam z twoim zyciem?",
 ]
 
 if __name__ == "__main__":
-    
+
     try:
         console.print("\n[bold yellow]🤖 Ładowanie modelu TTS...[/bold yellow]")
         tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to("cpu")
@@ -51,7 +48,7 @@ if __name__ == "__main__":
         generation_thread.start()
 
         console.print(f"[bold cyan]▶️  ({idx}/{len(texts)}) Uruchomienie generowania pliku audio...[/bold cyan]")
-        
+
         elapsed_time = run_tts_animation(
             target_text=" GENEROWANIE PLIKU AUDIO... ",
             thread_to_monitor=generation_thread
@@ -61,5 +58,5 @@ if __name__ == "__main__":
             console.print(f"[bold green]✅ Sukces! Plik '{output_wav_path}' został wygenerowany w {elapsed_time:.2f}s.[/bold green]")
         else:
             console.print(f"[bold red]❌ BŁĄD: Generowanie pliku '{output_wav_path}' nie powiodło się lub zostało przerwane.[/bold red]")
-    
+
     console.print("[bold magenta]Operacja zakończona.[/bold magenta]")

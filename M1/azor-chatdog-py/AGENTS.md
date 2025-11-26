@@ -7,16 +7,19 @@ Azor the chatdog is a command-line interface chat application that provides an i
 ## 🛠️ Setup Instructions
 
 1. Create a virtual environment:
+
    ```bash
    python -m venv .venv
    ```
 
 2. Activate the virtual environment:
+
    ```bash
    source .venv/bin/activate
    ```
 
 3. Install dependencies:
+
    ```bash
    pip install -r requirements.txt
    ```
@@ -29,6 +32,7 @@ Azor the chatdog is a command-line interface chat application that provides an i
 ## 📂 Architecture Overview
 
 **System Diagram**:
+
 ```
 +-------------------+
 |    User Interface |
@@ -67,6 +71,7 @@ Azor the chatdog is a command-line interface chat application that provides an i
 ```
 
 **Core Components**:
+
 - **Session Manager**: Orchestrates session lifecycle and state
 - **Chat Session**: Manages individual conversation history and state
 - **LLM Client**: Unified interface for different model types
@@ -75,6 +80,7 @@ Azor the chatdog is a command-line interface chat application that provides an i
 ## 🚦 Command Reference
 
 ### Core Commands
+
 ```
 /session list        # List all available sessions
 /session display     # Show full session history
@@ -89,6 +95,7 @@ Azor the chatdog is a command-line interface chat application that provides an i
 ```
 
 ### Usage Examples
+
 - Start new session: `python src/run.py`
 - Load specific session: `python src/run.py --session-id=abc123`
 - Switch sessions: `/switch xyz789`

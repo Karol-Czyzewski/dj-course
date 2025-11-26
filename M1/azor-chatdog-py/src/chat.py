@@ -11,11 +11,11 @@ def init_chat():
     """Initializes a new session or loads an existing one."""
     print_welcome()
     manager = get_session_manager()
-    
+
     # Initialize session based on CLI args
     cli_session_id = cli.args.get_session_id_from_cli()
     session = manager.initialize_from_cli(cli_session_id)
-    
+
     # Register cleanup handler
     atexit.register(lambda: manager.cleanup_and_save())
 
@@ -33,15 +33,15 @@ def main_loop():
             if user_input.startswith('/'):
                 should_exit = command_handler.handle_command(user_input)
                 if should_exit:
-                    break 
+                    break
                 continue
-            
+
             # Conversation with the model
             session = manager.get_current_session()
-            
+
             # Send message (handles WAL logging internally)
             response = session.send_message(user_input)
-            
+
             # Get token information
             total_tokens, remaining_tokens, max_tokens = session.get_token_info()
 

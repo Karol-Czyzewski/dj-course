@@ -47,7 +47,7 @@ def generate_circle_data(num_samples, radius=0.5):
     return X, Y
 
 # Generowanie danych
-NUM_SAMPLES = 10 # 🔥🔥🔥 PRACUJESZ TUTAJ
+NUM_SAMPLES = 30 # 🔥🔥🔥 PRACUJESZ TUTAJ
 X_circle, Y_circle = generate_circle_data(NUM_SAMPLES)
 
 # Inicjalizacja:
@@ -58,7 +58,7 @@ model2 = CircleInSquareNet()
 
 # Krok 1: Definicja Parametrów
 LEARNING_RATE = 0.00001 # 🔥🔥🔥 PRACUJESZ TUTAJ
-EPOCHS = 500 # 🔥🔥🔥 PRACUJESZ TUTAJ
+EPOCHS = 100 # 🔥🔥🔥 PRACUJESZ TUTAJ
 STEP = 100
 
 # Krok 2: Zmiana Optymalizatora i Funkcji Straty

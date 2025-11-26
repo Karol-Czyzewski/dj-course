@@ -30,26 +30,26 @@ def run():
     # Model selection (uncomment the desired model)
     # model = "gpt-3.5-turbo-0125"
     # model = "gpt-4"
-    # model = "gpt-o4"
+    # model = "gpt-4o-mini"
     # model = "gpt-4o"
-    model = "gpt-4-turbo" # Selected model
+    # model = "o4-mini"  # example for reasoning-capable model (if available)
+    # IMPORTANT: avoid trailing comma -> it turns the variable into a tuple.
+    # Allow override via env OPENAI_MODEL, fallback to a sensible default.
+    model = os.getenv("OPENAI_MODEL", "gpt-4o")  # Selected model
 
-    prompt_content = "Jakie jest najszybsze zwierzę na Ziemi?" # User query
+    prompt_content = "Jakie jest najszybsze zwierzę na Ziemi?"  # User query
 
     # Display the model used, colored cyan
-    print(f"{ITEM}model{RESET}: {model}")
+    print(f"{ITEM}model{RESET}: {model} (type={type(model)})")
 
     try:
         # API call to create a chat completion
         completion = client.chat.completions.create(
             model=model,
             messages=[
-                {
-                    "role": "user",
-                    "content": prompt_content,
-                },
+                {"role": "user", "content": prompt_content},
             ],
-            max_completion_tokens=128,
+            max_tokens=128,  # use max_tokens (common param) instead of non-existent max_completion_tokens
         )
 
         response_text = completion.choices[0].message.content.strip()

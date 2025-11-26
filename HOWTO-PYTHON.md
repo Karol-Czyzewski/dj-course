@@ -4,6 +4,7 @@
 2. albo lokalnie (zalecane) - i tu jest sporo opcji typu `venv`/`virtualenv`, `uv` itp. Z uwagi na popularność trzymam się `venv` - ale swobodnie - działajcie z tym co lubicie.
 
 Należy wejść w każdy folder pod-projektowy. Rozpoznasz go (jednocześnie):
+
 - **technicznie** - zawiera plik `requirements.txt` - który ma listę zależności
 - **konwencja** w DJ - jest podfolderem modułu DJ, np. `M1/szczypta-machine-learning`
   - Innymi słowy, **NIE MA** sytuacji typu: `M1/cośtam/projekt`

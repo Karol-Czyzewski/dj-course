@@ -61,6 +61,9 @@ No rocket science, ale warto monitorować zajętość miejsca (i wiedzieć, gdzi
  98M    .venv/lib/python3.13/site-packages/scipy
 ```
 
+rm -r build
+rm -r dist
 pyinstaller --windowed --name "Azor-Transcriber" app.py
+
 
 /Users/karol/dev/dj-course/M2/transcriber-ui/dist/Azor-Transcriber.app/Contents/MacOS/Azor-Transcriber

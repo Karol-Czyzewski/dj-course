@@ -218,21 +218,36 @@ class AudioRecorderApp:
 
         # 2. History Tab
         self.history_frame = tk.Frame(self.notebook, bg="#121212")
-        self.notebook.add(self.history_frame, text='Transcription History')
+        self.notebook.add(self.history_frame, text='History')
 
         # History UI: list of transcriptions + preview + delete
         list_frame = tk.Frame(self.history_frame, bg="#121212")
         list_frame.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=10)
 
         tk.Label(list_frame, text="Saved transcriptions:", font=('Arial', 12, 'bold'), fg='white', bg="#121212").pack(anchor='w')
-        self.history_list = tk.Listbox(list_frame, height=20, bg='#1E1E1E', fg='white')
-        self.history_list.pack(fill=tk.Y, expand=True)
+
+        # Container for list + scrollbar to prevent it from covering buttons
+        listbox_container = tk.Frame(list_frame, bg="#121212")
+        listbox_container.pack(fill=tk.BOTH, expand=True)
+
+        scrollbar = tk.Scrollbar(listbox_container, orient=tk.VERTICAL)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.history_list = tk.Listbox(listbox_container, height=14, bg='#1E1E1E', fg='white', yscrollcommand=scrollbar.set)
+        self.history_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.config(command=self.history_list.yview)
         self.history_list.bind('<<ListboxSelect>>', self.on_history_select)
 
+        # Buttons stay below the list; list doesn't overtake space thanks to its container
         btn_frame = tk.Frame(list_frame, bg="#121212")
         btn_frame.pack(fill=tk.X, pady=(10,0))
-        self.delete_button = ttk.Button(btn_frame, text="Delete Selected", command=self.delete_selected, style='Dark.TButton')
+        # CTA: Delete selected
+        self.delete_button = ttk.Button(btn_frame, text="Delete", command=self.delete_selected, style='Dark.TButton')
         self.delete_button.pack(fill=tk.X)
+
+        # CTA: Delete all
+        self.delete_all_button = ttk.Button(btn_frame, text="Delete All", command=self.delete_all, style='Dark.TButton')
+        self.delete_all_button.pack(fill=tk.X, pady=(8, 0))
 
         preview_frame = tk.Frame(self.history_frame, bg="#121212")
         preview_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -519,7 +534,7 @@ class AudioRecorderApp:
         """Deletes selected transcription JSON and its audio file."""
         sel = self.history_list.curselection()
         if not sel:
-            messagebox.showinfo("Delete", "Select an item to delete.")
+            messagebox.showinfo("Usuń", "Wybierz element do usunięcia.")
             return
         fname = self.history_list.get(sel[0])
         json_path = os.path.join(PROMPTS_DIR, fname)
@@ -531,7 +546,7 @@ class AudioRecorderApp:
         except Exception:
             audio_path = None
 
-        if not messagebox.askyesno("Confirm Delete", f"Delete {fname} and its audio?"):
+        if not messagebox.askyesno("Potwierdź usunięcie", f"Usunąć {fname} oraz jego plik audio?"):
             return
         try:
             if os.path.exists(json_path):
@@ -545,7 +560,54 @@ class AudioRecorderApp:
             self.history_display.config(state=tk.DISABLED)
         except Exception as e:
             logging.error(f"Failed to delete files: {e}")
-            messagebox.showerror("Delete Failed", f"Could not delete files: {e}")
+            messagebox.showerror("Usuwanie nieudane", f"Nie można usunąć plików: {e}")
+
+    def delete_all(self):
+        """Deletes all transcription JSON files and their associated audio files."""
+        try:
+            items = [
+                os.path.join(PROMPTS_DIR, f)
+                for f in os.listdir(PROMPTS_DIR)
+                if f.endswith('.json')
+            ]
+        except Exception as e:
+            logging.error(f"Failed to list history for delete all: {e}")
+            messagebox.showerror("Usuwanie nieudane", f"Nie można odczytać listy: {e}")
+            return
+
+        if not items:
+            messagebox.showinfo("Usuń wszystko", "Brak zapisów do usunięcia.")
+            return
+
+        if not messagebox.askyesno("Potwierdź usunięcie", "Usunąć wszystkie zapisy oraz powiązane pliki audio?"):
+            return
+
+        removed = 0
+        for json_path in items:
+            audio_path = None
+            try:
+                import json
+                with open(json_path, 'r', encoding='utf-8') as f:
+                    meta = json.load(f)
+                audio_path = meta.get('audio_path')
+            except Exception:
+                audio_path = None
+
+            try:
+                if os.path.exists(json_path):
+                    os.remove(json_path)
+                    removed += 1
+                if audio_path and os.path.exists(audio_path):
+                    os.remove(audio_path)
+            except Exception as e:
+                logging.error(f"Failed to delete {json_path} or audio {audio_path}: {e}")
+
+        logging.info(f"Deleted {removed} JSON files and their audio counterparts where available.")
+        self.refresh_history_list()
+        self.history_display.config(state=tk.NORMAL)
+        self.history_display.delete('1.0', tk.END)
+        self.history_display.config(state=tk.DISABLED)
+        messagebox.showinfo("Usuń wszystko", f"Usunięto {removed} zapisów.")
 
     def on_closing(self):
         """Handles clean application shutdown."""

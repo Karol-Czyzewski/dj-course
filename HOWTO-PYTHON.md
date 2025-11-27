@@ -67,3 +67,18 @@ function prepenv {
     }
 }
 ```
+
+# Install and set Python 3.12
+
+pyenv install 3.12.12
+pyenv local 3.12.12 # run in /Users/karol/dev/dj-course/M2/transcriber
+
+# Recreate venv
+
+python -m venv .venv
+source .venv/bin/activate
+
+# Upgrade pip and install
+
+pip install --upgrade pip
+pip install -r requirements.txt

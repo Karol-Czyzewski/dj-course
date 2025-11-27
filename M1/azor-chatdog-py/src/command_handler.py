@@ -4,6 +4,7 @@ from commands.session_list import list_sessions_command
 from commands.session_display import display_full_session
 from commands.session_to_pdf import export_session_to_pdf
 from commands.session_remove import remove_session_command
+from commands.audio import generate_audio_from_last_assistant
 
 VALID_SLASH_COMMANDS = ['/exit', '/quit', '/switch', '/help', '/session', '/pdf', '/audio']
 
@@ -74,7 +75,8 @@ def handle_command(user_input: str) -> bool:
         export_session_to_pdf(current.get_history(), current.session_id, current.assistant_name)
 
     elif command == '/audio':
-        console.print_info("Funkcja generowania audio nie jest jeszcze zaimplementowana.")
+        current = manager.get_current_session()
+        generate_audio_from_last_assistant(current.get_history(), current.session_id, current.assistant_name)
 
     return False
 

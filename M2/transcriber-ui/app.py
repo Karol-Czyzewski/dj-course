@@ -15,7 +15,13 @@ from typing import TextIO
 APP_TITLE = "Azor Transcriber"
 # Set to True to print output to the console (standard output/stderr).
 VERBOSE = False
-LOG_FILENAME = "transcriber.log"
+# Explicit project paths (user request)
+PROJECT_BASE_OVERRIDE = "/Users/karol/dev/dj-course/M2/transcriber-ui"
+
+BASE_DIR = PROJECT_BASE_OVERRIDE if os.path.isdir(PROJECT_BASE_OVERRIDE) else os.path.dirname(os.path.abspath(__file__))
+LOG_FILENAME = os.path.join(BASE_DIR, "transcriber.log")
+AUDIO_DIR = os.path.join(BASE_DIR, "audio-recordings")
+PROMPTS_DIR = os.path.join(BASE_DIR, "prompts-data")
 
 # --- Logging Setup ---
 class StreamToLogger(TextIO):
@@ -41,8 +47,9 @@ class StreamToLogger(TextIO):
 
 # Configure the global logger BEFORE application startup
 def setup_logging():
-    """Con gures the logging system to save all output to a le and optionally to console."""
-    os.makedirs('output', exist_ok=True)
+    """Configures logging to file and optionally console."""
+    os.makedirs(AUDIO_DIR, exist_ok=True)
+    os.makedirs(PROMPTS_DIR, exist_ok=True)
     
     # 1. Root logger setup
     root_logger = logging.getLogger()
@@ -87,10 +94,13 @@ except ImportError:
 # === 1. Transcription Configuration ===
 MODEL_NAME = "openai/whisper-tiny"
 
-def output_filename()  -> str:
-    """Generates output filename for transcription results."""
-    os.makedirs('output', exist_ok=True)
-    return f"output/recording-{int(time.time())}.wav"
+def generate_ids() -> tuple[str, str]:
+    """Generates a base ID and returns audio and prompt filenames."""
+    ts = int(time.time())
+    base = f"recording-{ts}"
+    audio_path = os.path.join(AUDIO_DIR, f"{base}.wav")
+    prompt_path = os.path.join(PROMPTS_DIR, f"{base}.json")
+    return audio_path, prompt_path
 
 def transcribe_audio(audio_path: str, model_name: str) -> str:
     """
@@ -207,28 +217,36 @@ class AudioRecorderApp:
         self.notebook.add(self.transcriber_frame, text='Transcriber')
 
         # 2. History Tab
-        self.history_frame = tk.Frame(self.notebook, bg="#121212") # Consistent dark background
+        self.history_frame = tk.Frame(self.notebook, bg="#121212")
         self.notebook.add(self.history_frame, text='Transcription History')
-        
-        # Content for History Tab: Last Transcription Display
-        tk.Label(self.history_frame, text="Last transcription:", font=('Arial', 14, 'bold'), fg='white', bg="#121212").pack(pady=(10, 5))
-        
-        self.history_display = tk.Text(self.history_frame, 
-                                       height=10, 
-                                       wrap=tk.WORD, 
-                                       font=('Arial', 11),
-                                       relief=tk.SUNKEN, 
-                                       bg='#1E1E1E', 
-                                       fg='white', 
-                                       insertbackground='white', 
-                                       state=tk.DISABLED 
-                                      )
-        self.history_display.pack(pady=10, padx=20, fill=tk.BOTH, expand=True)
-        
-        # Placeholder text in history
-        self.history_display.config(state=tk.NORMAL)
-        self.history_display.insert(tk.END, "Under construction...")
-        self.history_display.config(state=tk.DISABLED)
+
+        # History UI: list of transcriptions + preview + delete
+        list_frame = tk.Frame(self.history_frame, bg="#121212")
+        list_frame.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=10)
+
+        tk.Label(list_frame, text="Saved transcriptions:", font=('Arial', 12, 'bold'), fg='white', bg="#121212").pack(anchor='w')
+        self.history_list = tk.Listbox(list_frame, height=20, bg='#1E1E1E', fg='white')
+        self.history_list.pack(fill=tk.Y, expand=True)
+        self.history_list.bind('<<ListboxSelect>>', self.on_history_select)
+
+        btn_frame = tk.Frame(list_frame, bg="#121212")
+        btn_frame.pack(fill=tk.X, pady=(10,0))
+        self.delete_button = ttk.Button(btn_frame, text="Delete Selected", command=self.delete_selected, style='Dark.TButton')
+        self.delete_button.pack(fill=tk.X)
+
+        preview_frame = tk.Frame(self.history_frame, bg="#121212")
+        preview_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=10)
+        tk.Label(preview_frame, text="Preview:", font=('Arial', 12, 'bold'), fg='white', bg="#121212").pack(anchor='w')
+        self.history_display = tk.Text(preview_frame,
+                           height=20,
+                           wrap=tk.WORD,
+                           font=('Arial', 11),
+                           relief=tk.SUNKEN,
+                           bg='#1E1E1E',
+                           fg='white',
+                           insertbackground='white',
+                           state=tk.DISABLED)
+        self.history_display.pack(fill=tk.BOTH, expand=True)
 
 
         # 3. Settings Tab
@@ -366,7 +384,7 @@ class AudioRecorderApp:
             self.stream = None
         logging.info("Audio stream closed.")
 
-        WAVE_OUTPUT_FILENAME = output_filename()
+        AUDIO_OUTPUT_FILENAME, PROMPT_JSON_FILENAME = generate_ids()
         
         # Update button status for user feedback
         self.record_button.config(text="Saving...", state=tk.DISABLED) 
@@ -374,12 +392,12 @@ class AudioRecorderApp:
 
         # Save to WAVE file
         try:
-            with wave.open(WAVE_OUTPUT_FILENAME, 'wb') as wf:
+            with wave.open(AUDIO_OUTPUT_FILENAME, 'wb') as wf:
                 wf.setnchannels(CHANNELS)
                 wf.setsampwidth(self.p.get_sample_size(FORMAT))
                 wf.setframerate(RATE)
                 wf.writeframes(b''.join(self.frames))
-            logging.info(f"File saved successfully to {WAVE_OUTPUT_FILENAME}")
+            logging.info(f"File saved successfully to {AUDIO_OUTPUT_FILENAME}")
             
             self.record_button.config(text="Transcribing...")
             
@@ -392,7 +410,7 @@ class AudioRecorderApp:
             # === START TRANSCRIPTION IN A THREAD ===
             transcription_thread = threading.Thread(
                 target=self.run_transcription,
-                args=(WAVE_OUTPUT_FILENAME,),
+                args=(AUDIO_OUTPUT_FILENAME, PROMPT_JSON_FILENAME,),
                 daemon=True
             )
             transcription_thread.start()
@@ -403,14 +421,29 @@ class AudioRecorderApp:
             self.record_button.config(text="Record", state=tk.NORMAL) 
             logging.error(f"Error saving wave file: {e}", exc_info=True)
 
-    def run_transcription(self, audio_path):
+    def run_transcription(self, audio_path, prompt_json_path):
         """
         Method executed in a separate thread. 
         Calls transcription and puts the result in the queue.
         """
         logging.info(f"Running transcription for {audio_path} in thread: {threading.get_ident()}")
         transcription = transcribe_audio(audio_path, MODEL_NAME)
-        self.transcription_queue.put(transcription)
+        # Persist JSON metadata
+        try:
+            meta = {
+                "id": os.path.splitext(os.path.basename(prompt_json_path))[0],
+                "audio_path": audio_path,
+                "model": MODEL_NAME,
+                "timestamp": int(time.time()),
+                "text": transcription,
+            }
+            with open(prompt_json_path, 'w', encoding='utf-8') as f:
+                import json
+                json.dump(meta, f, ensure_ascii=False, indent=2)
+            logging.info(f"Saved transcription JSON to {prompt_json_path}")
+        except Exception as e:
+            logging.error(f"Failed to save JSON metadata: {e}")
+        self.transcription_queue.put((transcription, prompt_json_path))
 
     def check_transcription_queue(self):
         """
@@ -421,23 +454,24 @@ class AudioRecorderApp:
             result = self.transcription_queue.get(block=False)
             
             # 1. Update Transcriber tab (main output)
+            text_result, prompt_json_path = result if isinstance(result, tuple) else (result, None)
             self.transcription_display.config(state=tk.NORMAL)
             self.transcription_display.delete('1.0', tk.END)
-            self.transcription_display.insert(tk.END, result)
+            self.transcription_display.insert(tk.END, text_result)
             self.transcription_display.config(state=tk.DISABLED)
             
             # 2. Update History tab (last output)
-            self.history_display.config(state=tk.NORMAL)
-            self.history_display.delete('1.0', tk.END)
-            self.history_display.insert(tk.END, "Under construction..." + result)
-            self.history_display.config(state=tk.DISABLED)
+            # Refresh history list and preview
+            self.refresh_history_list()
+            if prompt_json_path:
+                self.load_history_item(prompt_json_path)
             
-            if "ERROR" in result:
+            if "ERROR" in text_result:
                 logging.warning("Transcription failed with error message.")
                 messagebox.showerror("Transcription Failed", "Transcription returned an error. Check logs for details.")
             else:
                 # Copy to clipboard upon successful transcription
-                self.copy_to_clipboard(result) 
+                self.copy_to_clipboard(text_result) 
                 
             self.record_button.config(text="Record", state=tk.NORMAL) # Return to normal state
 
@@ -445,6 +479,73 @@ class AudioRecorderApp:
             pass
         finally:
             self.master.after(100, self.check_transcription_queue)
+
+    def refresh_history_list(self):
+        """Loads JSON files from PROMPTS_DIR into the listbox."""
+        try:
+            items = sorted([
+                f for f in os.listdir(PROMPTS_DIR)
+                if f.endswith('.json')
+            ])
+            self.history_list.delete(0, tk.END)
+            for f in items:
+                self.history_list.insert(tk.END, f)
+        except Exception as e:
+            logging.error(f"Failed to refresh history list: {e}")
+
+    def on_history_select(self, event=None):
+        sel = self.history_list.curselection()
+        if not sel:
+            return
+        fname = self.history_list.get(sel[0])
+        path = os.path.join(PROMPTS_DIR, fname)
+        self.load_history_item(path)
+
+    def load_history_item(self, json_path: str):
+        """Loads JSON and shows preview."""
+        try:
+            import json
+            with open(json_path, 'r', encoding='utf-8') as f:
+                meta = json.load(f)
+            preview = f"ID: {meta.get('id')}\nModel: {meta.get('model')}\nAudio: {meta.get('audio_path')}\nTimestamp: {meta.get('timestamp')}\n\n{meta.get('text','')}"
+            self.history_display.config(state=tk.NORMAL)
+            self.history_display.delete('1.0', tk.END)
+            self.history_display.insert(tk.END, preview)
+            self.history_display.config(state=tk.DISABLED)
+        except Exception as e:
+            logging.error(f"Failed to load history item {json_path}: {e}")
+
+    def delete_selected(self):
+        """Deletes selected transcription JSON and its audio file."""
+        sel = self.history_list.curselection()
+        if not sel:
+            messagebox.showinfo("Delete", "Select an item to delete.")
+            return
+        fname = self.history_list.get(sel[0])
+        json_path = os.path.join(PROMPTS_DIR, fname)
+        try:
+            import json
+            with open(json_path, 'r', encoding='utf-8') as f:
+                meta = json.load(f)
+            audio_path = meta.get('audio_path')
+        except Exception:
+            audio_path = None
+
+        if not messagebox.askyesno("Confirm Delete", f"Delete {fname} and its audio?"):
+            return
+        try:
+            if os.path.exists(json_path):
+                os.remove(json_path)
+            if audio_path and os.path.exists(audio_path):
+                os.remove(audio_path)
+            logging.info(f"Deleted {json_path} and {audio_path}")
+            self.refresh_history_list()
+            self.history_display.config(state=tk.NORMAL)
+            self.history_display.delete('1.0', tk.END)
+            self.history_display.config(state=tk.DISABLED)
+        except Exception as e:
+            logging.error(f"Failed to delete files: {e}")
+            messagebox.showerror("Delete Failed", f"Could not delete files: {e}")
 
     def on_closing(self):
         """Handles clean application shutdown."""
@@ -464,4 +565,6 @@ if __name__ == "__main__":
     logging.info("Whisper model loading might take a moment on first launch...")
     root = tk.Tk()
     app = AudioRecorderApp(root)
+    # Initial history load
+    app.refresh_history_list()
     root.mainloop()

@@ -5,8 +5,11 @@ from commands.session_display import display_full_session
 from commands.session_to_pdf import export_session_to_pdf
 from commands.session_remove import remove_session_command
 from commands.audio import generate_audio_from_last_assistant
+from assistant import available_assistants
 
-VALID_SLASH_COMMANDS = ['/exit', '/quit', '/switch', '/help', '/session', '/pdf', '/audio']
+VALID_SLASH_COMMANDS = ['/exit', '/quit', '/switch', '/help', '/session', '/pdf', '/audio', '/assistant']
+# Dynamic assistant shortcut commands (e.g. /AZOR)
+ASSISTANT_SHORTCUTS = [f"/{name}" for name in available_assistants()] + ["/OPTYMISTA"]  # include alias
 
 def handle_command(user_input: str) -> bool:
     """
@@ -17,7 +20,19 @@ def handle_command(user_input: str) -> bool:
 
     manager = get_session_manager()
 
-    # Check if the main command is valid
+    # Direct assistant shortcut (e.g. /AZOR)
+    if command.upper() in [c.upper() for c in ASSISTANT_SHORTCUTS]:
+        target_name = command[1:]  # strip leading '/'
+        current = manager.get_current_session()
+        old_name = current.assistant_name
+        success, error = manager.switch_assistant_in_current_session(target_name)
+        if not success:
+            console.print_error(error or "Nie udało się przełączyć asystenta.")
+        else:
+            console.print_info(f"Przełączono asystenta: {old_name} → {current.assistant_name}")
+        return False
+
+    # Check if the main command is valid (non-assistant)
     if command not in VALID_SLASH_COMMANDS:
         console.print_error(f"Błąd: Nieznana komenda: {command}. Użyj /help.")
         current = manager.get_current_session()
@@ -77,6 +92,21 @@ def handle_command(user_input: str) -> bool:
     elif command == '/audio':
         current = manager.get_current_session()
         generate_audio_from_last_assistant(current.get_history(), current.session_id, current.assistant_name)
+
+    elif command == '/assistant':
+        # Switch current assistant within this session
+        if len(parts) == 2:
+            target = parts[1]
+            current = manager.get_current_session()
+            old_name = current.assistant_name
+            success, error = manager.switch_assistant_in_current_session(target)
+            if not success:
+                console.print_error(error or "Nie udało się przełączyć asystenta.")
+            else:
+                console.print_info(f"Przełączono asystenta: {old_name} → {current.assistant_name}")
+                console.print_info(f"Dostępni asystenci: {', '.join(available_assistants())}")
+        else:
+            console.print_error("Błąd: Użycie: /assistant <NAZWA>. Dostępni: " + ", ".join(available_assistants()))
 
     return False
 

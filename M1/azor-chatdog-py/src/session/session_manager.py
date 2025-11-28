@@ -1,6 +1,6 @@
 from cli import console
 from .chat_session import ChatSession
-from assistant import create_azor_assistant
+from assistant import create_azor_assistant, create_assistant_by_name, available_assistants
 from files import session_files
 
 
@@ -89,8 +89,7 @@ class SessionManager:
             self._current_session.save_to_file()
 
         # Load new session
-        assistant = create_azor_assistant()
-        new_session, error = ChatSession.load_from_file(assistant=assistant, session_id=session_id)
+        new_session, error = ChatSession.load_from_file(session_id=session_id)
 
         if error:
             # Failed to load - don't change current session
@@ -137,8 +136,7 @@ class SessionManager:
             ChatSession: The initialized session
         """
         if cli_session_id:
-            assistant = create_azor_assistant()
-            session, error = ChatSession.load_from_file(assistant=assistant, session_id=cli_session_id)
+            session, error = ChatSession.load_from_file(session_id=cli_session_id)
 
             if error:
                 console.print_error(error)
@@ -177,3 +175,22 @@ class SessionManager:
             console.print_info(f"\nFinalny zapis historii sesji: {session.session_id}")
             session.save_to_file()
             console.display_final_instructions(session.session_id)
+
+    def switch_assistant_in_current_session(self, assistant_name: str) -> tuple[bool, str | None]:
+        """
+        Switches the assistant for the current session, reinitializing the LLM with
+        existing history. Returns (success, error).
+        """
+        if not self._current_session:
+            return False, "Brak aktywnej sesji. Użyj /session new lub /switch <ID>."
+
+        # Validate against list (optional)
+        target = assistant_name.strip().upper()
+        if target not in available_assistants():
+            return False, f"Nieznany asystent: {assistant_name}. Dostępni: {', '.join(available_assistants())}"
+
+        new_assistant = create_assistant_by_name(target)
+        self._current_session.set_assistant(new_assistant)
+        # Save metadata change (system prompt/name) along with current history
+        self._current_session.save_to_file()
+        return True, None

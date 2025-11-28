@@ -66,22 +66,20 @@ class ChatSession:
 
 
     @classmethod
-    def load_from_file(cls, assistant: Assistant, session_id: str) -> tuple['ChatSession | None', str | None]:
+    def load_from_file(cls, session_id: str) -> tuple['ChatSession | None', str | None]:
         """
-        Loads a session from disk.
-
-        Args:
-            assistant: Assistant instance to use for this session
-            session_id: ID of the session to load
+        Loads a session from disk creating Assistant from stored metadata.
 
         Returns:
-            tuple: (ChatSession object or None, error_message or None)
+            (ChatSession | None, error_message | None)
         """
-        history, error = session_files.load_session_history(session_id)
-
+        history, system_role, assistant_name, error = session_files.load_session_history(session_id)
         if error:
             return None, error
-
+        # If metadata missing fallback to generic AZOR assistant name and role
+        role = system_role or "Jesteś pomocnym asystentem."
+        name = assistant_name or "AZOR"
+        assistant = Assistant(system_prompt=role, name=name)
         session = cls(assistant=assistant, session_id=session_id, history=history)
         return session, None
 
@@ -101,6 +99,7 @@ class ChatSession:
             self.session_id,
             self._history,
             self.assistant.system_prompt,
+            self.assistant.name,
             self._llm_client.get_model_name()
         )
 
@@ -226,3 +225,11 @@ class ChatSession:
             str: The assistant's display name
         """
         return self.assistant.name
+
+    def set_assistant(self, assistant: Assistant):
+        """
+        Updates the assistant for this session and reinitializes the LLM session
+        with the existing history.
+        """
+        self.assistant = assistant
+        self._initialize_llm_session()

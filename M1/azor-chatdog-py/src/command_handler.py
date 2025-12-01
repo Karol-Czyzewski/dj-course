@@ -5,9 +5,10 @@ from commands.session_display import display_full_session
 from commands.session_to_pdf import export_session_to_pdf
 from commands.session_remove import remove_session_command
 from commands.audio import generate_audio_from_last_assistant
+from commands.title import rename_title_command
 from assistant import available_assistants
 
-VALID_SLASH_COMMANDS = ['/exit', '/quit', '/switch', '/help', '/session', '/pdf', '/audio', '/assistant']
+VALID_SLASH_COMMANDS = ['/exit', '/quit', '/switch', '/help', '/session', '/pdf', '/audio', '/assistant', '/title']
 # Dynamic assistant shortcut commands (e.g. /AZOR)
 ASSISTANT_SHORTCUTS = [f"/{name}" for name in available_assistants()] + ["/OPTYMISTA"]  # include alias
 
@@ -74,7 +75,7 @@ def handle_command(user_input: str) -> bool:
                     # Display history summary if session has content
                     if has_history:
                         from commands.session_summary import display_history_summary
-                        display_history_summary(new_session.get_history(), new_session.assistant_name)
+                        display_history_summary(new_session.get_history(), new_session.assistant_name, new_session.session_id)
         else:
             console.print_error("Błąd: Użycie: /switch <SESSION-ID>")
 
@@ -108,6 +109,18 @@ def handle_command(user_input: str) -> bool:
         else:
             console.print_error("Błąd: Użycie: /assistant <NAZWA>. Dostępni: " + ", ".join(available_assistants()))
 
+    elif command == '/title':
+        current = manager.get_current_session()
+        if len(parts) < 2:
+            console.print_error("Błąd: Użycie: /title <NOWY_TYTUŁ>")
+        else:
+            new_title = " ".join(parts[1:])
+            success, error = rename_title_command(current, new_title)
+            if success:
+                console.print_info(f"Zmieniono tytuł sesji na: {current.get_title()}")
+            else:
+                console.print_error(error or "Nie udało się zmienić tytułu.")
+
     return False
 
 
@@ -126,7 +139,7 @@ def handle_session_subcommand(subcommand: str, manager):
         if success:
             from commands.session_summary import display_history_summary
             console.print_info(f"Usunięto ostatnią parę wpisów (TY i {current.assistant_name}).")
-            display_history_summary(current.get_history(), current.assistant_name)
+            display_history_summary(current.get_history(), current.assistant_name, current.session_id)
         else:
             console.print_error("Błąd: Historia jest pusta lub niekompletna (wymaga co najmniej jednej pary).")
 

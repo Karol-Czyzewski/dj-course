@@ -45,8 +45,19 @@ def main_loop():
             # Get token information
             total_tokens, remaining_tokens, max_tokens = session.get_token_info()
 
-            # Display response
-            console.print_assistant(f"\n{session.assistant_name}: {response.text}")
+            # Display like in history summary: show user msg, optional title, and cleaned assistant answer
+            history = session.get_history()
+            title = session.get_title()
+            try:
+                last_assistant = next((m for m in reversed(history) if m.get('role') in ('model','assistant')), None)
+                if title:
+                    console.print_info(f"📝 Tytuł wątku: {title}")
+                if last_assistant:
+                    assistant_text = last_assistant['parts'][0].get('text', '')
+                    console.print_assistant(f"{session.assistant_name}: {assistant_text}")
+            except Exception:
+                # Fallback to raw response
+                console.print_assistant(f"\n{session.assistant_name}: {response.text}")
             console.print_info(f"Tokens: {total_tokens} (Pozostało: {remaining_tokens} / {max_tokens})")
 
             # Save session

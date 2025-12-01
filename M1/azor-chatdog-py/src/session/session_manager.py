@@ -88,7 +88,7 @@ class SessionManager:
             previous_session_id = self._current_session.session_id
             self._current_session.save_to_file()
 
-        # Load new session
+        # Load new session via ChatSession factory (handles title)
         new_session, error = ChatSession.load_from_file(session_id=session_id)
 
         if error:
@@ -140,8 +140,9 @@ class SessionManager:
 
             if error:
                 console.print_error(error)
-                # Fallback to new session
-                session = ChatSession(assistant=assistant)
+                # Fallback to new session with default assistant
+                fallback_assistant = create_azor_assistant()
+                session = ChatSession(assistant=fallback_assistant)
                 console.print_info(f"Rozpoczęto nową sesję z ID: {session.session_id}")
 
             self._current_session = session

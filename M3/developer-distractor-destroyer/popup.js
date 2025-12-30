@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const addWebsiteBtn = document.getElementById('addWebsite');
     const blockedSites = document.getElementById('blockedSites');
     const viewStatsBtn = document.getElementById('viewStats');
+    const viewInsightsBtn = document.getElementById('viewInsights');
 
     let isBlocking = false;
     let blockedWebsites = [];
@@ -22,6 +23,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     viewStatsBtn.addEventListener('click', () => {
         chrome.tabs.create({ url: chrome.runtime.getURL('stats.html') });
+    });
+
+    viewInsightsBtn.addEventListener('click', () => {
+        chrome.tabs.create({ url: chrome.runtime.getURL('history.html') });
     });
 
     // Load settings from storage

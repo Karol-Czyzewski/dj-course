@@ -17,7 +17,7 @@ function initializeExtension() {
     console.log('initialize')
 
     // Initialize storage
-    chrome.storage.local.get(['timeData', 'currentSessionTime', 'gotchaStats'], function(result) {
+    chrome.storage.local.get(['timeData', 'currentSessionTime', 'gotchaStats', 'timeHistory'], function(result) {
         if (!result.timeData) {
             chrome.storage.local.set({timeData: {}});
         }
@@ -26,6 +26,9 @@ function initializeExtension() {
         }
         if (!result.gotchaStats) {
             chrome.storage.local.set({gotchaStats: {}});
+        }
+        if (!result.timeHistory) {
+            chrome.storage.local.set({timeHistory: {}});
         }
     });
 
@@ -68,16 +71,34 @@ function trackActiveTab() {
     });
 }
 
+function getDateKey(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 function updateTime(domain) {
-    chrome.storage.local.get(['timeData', 'currentSessionTime'], (result) => {
+    chrome.storage.local.get(['timeData', 'currentSessionTime', 'timeHistory'], (result) => {
         const timeData = result.timeData || {};
         const currentSessionTime = result.currentSessionTime || 0;
+        const timeHistory = result.timeHistory || {};
+        const dateKey = getDateKey();
+        const dayEntry = timeHistory[dateKey] && typeof timeHistory[dateKey] === 'object'
+            ? {...timeHistory[dateKey]}
+            : { totalSeconds: 0, domains: {} };
+
+        dayEntry.domains = dayEntry.domains || {};
+        dayEntry.domains[domain] = (dayEntry.domains[domain] || 0) + 1;
+        dayEntry.totalSeconds = (dayEntry.totalSeconds || 0) + 1;
+        timeHistory[dateKey] = dayEntry;
 
         timeData[domain] = (timeData[domain] || 0) + 1;
 
         chrome.storage.local.set({
             timeData: timeData,
-            currentSessionTime: currentSessionTime + 1
+            currentSessionTime: currentSessionTime + 1,
+            timeHistory: timeHistory
         });
     });
 }

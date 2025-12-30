@@ -28,7 +28,15 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["blocked.html", "blocked.js", "chart.min.js", "stats.html", "stats.js"],
+      "resources": [
+        "blocked.html",
+        "blocked.js",
+        "chart.min.js",
+        "stats.html",
+        "stats.js",
+        "history.html",
+        "history.js"
+      ],
       "matches": ["<all_urls>"]
     }
   ]

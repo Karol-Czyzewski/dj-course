@@ -14,6 +14,9 @@ function displayStats() {
     const gotchaChartCanvas = document.getElementById('gotchaChart').getContext('2d');
     const clearGotchaStatsBtn = document.getElementById('clearGotchaStats');
     let gotchaChart = null;
+    const exportBtn = document.getElementById('exportStats');
+    const importBtn = document.getElementById('importStats');
+    const fileInput = document.getElementById('statsFileInput');
 
     let intervalId = null;
 
@@ -272,7 +275,7 @@ function displayStats() {
 
     clearTimeStatsBtn.addEventListener('click', () => {
         if (confirm('Are you sure you want to clear all time statistics? This cannot be undone.')) {
-            chrome.storage.local.set({ timeData: {}, currentSessionTime: 0 }, () => {
+            chrome.storage.local.set({ timeData: {}, currentSessionTime: 0, timeHistory: {} }, () => {
                 if (timeChart) {
                     timeChart.destroy();
                     timeChart = null;
@@ -292,6 +295,80 @@ function displayStats() {
                 updateStats();
             });
         }
+    });
+
+    exportBtn.addEventListener('click', () => {
+        chrome.storage.local.get(['timeData', 'timeHistory', 'gotchaStats', 'currentSessionTime', 'blockedWebsites'], (snapshot) => {
+            const payload = {
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                data: {
+                    timeData: snapshot.timeData || {},
+                    timeHistory: snapshot.timeHistory || {},
+                    gotchaStats: snapshot.gotchaStats || {},
+                    currentSessionTime: snapshot.currentSessionTime || 0,
+                    blockedWebsites: snapshot.blockedWebsites || []
+                }
+            };
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ddd-stats-${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    });
+
+    importBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', (event) => {
+        const file = event.target.files && event.target.files[0];
+        if (!file) {
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const parsed = JSON.parse(reader.result);
+                const payload = parsed.data && typeof parsed.data === 'object' ? parsed.data : parsed;
+                const nextState = {};
+                if (payload.timeData && typeof payload.timeData === 'object') {
+                    nextState.timeData = payload.timeData;
+                }
+                if (payload.timeHistory && typeof payload.timeHistory === 'object') {
+                    nextState.timeHistory = payload.timeHistory;
+                }
+                if (payload.gotchaStats && typeof payload.gotchaStats === 'object') {
+                    nextState.gotchaStats = payload.gotchaStats;
+                }
+                if (typeof payload.currentSessionTime === 'number') {
+                    nextState.currentSessionTime = payload.currentSessionTime;
+                }
+                if (Array.isArray(payload.blockedWebsites)) {
+                    nextState.blockedWebsites = payload.blockedWebsites;
+                }
+
+                if (Object.keys(nextState).length === 0) {
+                    alert('Selected file does not contain recognizable statistics.');
+                    return;
+                }
+
+                chrome.storage.local.set(nextState, () => {
+                    alert('Statistics imported successfully.');
+                    updateStats();
+                });
+            } catch (error) {
+                console.error('Failed to import stats', error);
+                alert('Could not parse the selected JSON file.');
+            } finally {
+                event.target.value = '';
+            }
+        };
+        reader.readAsText(file);
     });
 
     // Initial update

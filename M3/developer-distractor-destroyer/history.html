@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Timeline - Developer Distractor Destroyer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #0f172a;
+            --soft-ink: rgba(15, 23, 42, 0.68);
+            --glow: #f4c96f;
+            --accent: #2dd4bf;
+            --card: rgba(15, 23, 42, 0.45);
+            --border: rgba(255, 255, 255, 0.18);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at 20% -10%, #ffecd2 0%, rgba(255, 236, 210, 0) 25%),
+                        radial-gradient(circle at 80% 0%, rgba(45, 212, 191, 0.4), rgba(45, 212, 191, 0)),
+                        linear-gradient(120deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            color: #f8fafc;
+            padding: 40px 24px 120px;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: url('data:image/svg+xml,%3Csvg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-opacity="0.15" fill-rule="evenodd"%3E%3Cpath d="M0 60h60v60H0zM60 0h60v60H60z" fill="%23ffffff"/%3E%3C/g%3E%3C/svg%3E');
+            opacity: 0.08;
+            pointer-events: none;
+        }
+
+        .page {
+            position: relative;
+            max-width: 1100px;
+            margin: 0 auto;
+            z-index: 1;
+        }
+
+        .hero {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            align-items: stretch;
+            margin-bottom: 30px;
+        }
+
+        .hero-copy {
+            flex: 2 1 340px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 32px;
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-copy::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, rgba(250, 204, 21, 0.2), rgba(45, 212, 191, 0.1));
+            pointer-events: none;
+        }
+
+        .eyebrow {
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            font-size: 12px;
+            color: rgba(248, 250, 252, 0.7);
+            margin: 0 0 12px 0;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 42px;
+            line-height: 1.1;
+        }
+
+        .subtitle {
+            margin: 16px 0 24px;
+            font-size: 18px;
+            color: rgba(248, 250, 252, 0.8);
+        }
+
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .ghost-button {
+            padding: 10px 18px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+
+        .ghost-button:hover {
+            border-color: #fff;
+            transform: translateY(-1px);
+        }
+
+        .hero-card {
+            flex: 1 1 260px;
+            border-radius: 24px;
+            padding: 26px;
+            background: radial-gradient(circle at 10% 20%, rgba(244, 201, 111, 0.3), rgba(244, 201, 111, 0));
+            background-color: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border);
+            backdrop-filter: blur(18px);
+        }
+
+        .hero-card h3 {
+            margin: 0 0 10px;
+            font-size: 18px;
+            color: rgba(248, 250, 252, 0.8);
+        }
+
+        .hero-card strong {
+            display: block;
+            font-size: 48px;
+            line-height: 1;
+        }
+
+        .hero-card span {
+            display: block;
+            margin-top: 6px;
+            color: rgba(248, 250, 252, 0.6);
+        }
+
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 28px;
+            backdrop-filter: blur(20px);
+            margin-bottom: 24px;
+        }
+
+        .filters-grid {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        }
+
+        .filter-block label {
+            font-size: 13px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(248, 250, 252, 0.65);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .segmented {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.2);
+            overflow: hidden;
+        }
+
+        .segmented button {
+            background: transparent;
+            border: none;
+            color: rgba(248, 250, 252, 0.7);
+            padding: 12px 10px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .segmented button.active {
+            background: rgba(244, 201, 111, 0.2);
+            color: #fff;
+        }
+
+        select, input[type="date"] {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(15, 23, 42, 0.6);
+            color: white;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 15px;
+        }
+
+        .custom-range {
+            display: none;
+        }
+
+        .custom-range.visible {
+            display: block;
+        }
+
+        .custom-range .dates {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+        }
+
+        .summary-card {
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: radial-gradient(circle at 0% 0%, rgba(45, 212, 191, 0.25), transparent 55%), rgba(15, 23, 42, 0.5);
+        }
+
+        .summary-card h4 {
+            margin: 0;
+            font-size: 15px;
+            color: rgba(248, 250, 252, 0.7);
+        }
+
+        .summary-card strong {
+            display: block;
+            margin-top: 6px;
+            font-size: 32px;
+        }
+
+        .summary-card span {
+            font-size: 14px;
+            color: rgba(248, 250, 252, 0.7);
+        }
+
+        .chart-panel {
+            position: relative;
+        }
+
+        #historyChart {
+            width: 100%;
+            height: 360px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 18px;
+            color: rgba(248, 250, 252, 0.7);
+        }
+
+        .period-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+        }
+
+        .period-card {
+            border-radius: 18px;
+            padding: 18px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(15, 23, 42, 0.45);
+        }
+
+        .period-card h5 {
+            margin: 0 0 6px;
+            font-size: 18px;
+        }
+
+        .period-card p {
+            margin: 0;
+            font-size: 14px;
+            color: rgba(248, 250, 252, 0.65);
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(45, 212, 191, 0.2);
+            color: #5eead4;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 720px) {
+            body {
+                padding: 24px 16px 80px;
+            }
+            h1 {
+                font-size: 32px;
+            }
+            .panel, .hero-copy, .hero-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <section class="hero">
+            <div class="hero-copy">
+                <p class="eyebrow">Focus radar</p>
+                <h1>Time Intelligence Desk</h1>
+                <p class="subtitle">Slice your browsing focus by day, week, or month. Apply quick filters, surface trends, and prove where your attention really goes.</p>
+                <div class="hero-actions">
+                    <a class="ghost-button" href="popup.html">⬅ Back to popup</a>
+                    <a class="ghost-button" href="stats.html">View classic stats</a>
+                </div>
+            </div>
+            <div class="hero-card">
+                <h3>Latest capture window</h3>
+                <strong id="heroTotal">--h --m</strong>
+                <span id="heroRange">Waiting for data…</span>
+                <span id="heroTopDomain"></span>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="filters-grid">
+                <div class="filter-block">
+                    <label>Granularity</label>
+                    <div class="segmented" id="granularityToggle">
+                        <button data-value="daily" class="active">Daily</button>
+                        <button data-value="weekly">Weekly</button>
+                        <button data-value="monthly">Monthly</button>
+                    </div>
+                </div>
+                <div class="filter-block">
+                    <label>Range preset</label>
+                    <select id="rangeSelect">
+                        <option value="last7">Last 7 days</option>
+                        <option value="last30" selected>Last 30 days</option>
+                        <option value="last90">Last 90 days</option>
+                        <option value="thisMonth">This month</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+                <div class="filter-block custom-range" id="customRangeBlock">
+                    <label>Custom window</label>
+                    <div class="dates">
+                        <input type="date" id="startDate">
+                        <input type="date" id="endDate">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel summary-grid">
+            <div class="summary-card">
+                <h4>Total focus</h4>
+                <strong id="rangeTotal">--:--</strong>
+                <span id="rangeWindow">Pick a window to inspect</span>
+            </div>
+            <div class="summary-card">
+                <h4>Top domain</h4>
+                <strong id="topDomain">--</strong>
+                <span id="topDomainTime"></span>
+            </div>
+            <div class="summary-card">
+                <h4>Avg per bucket</h4>
+                <strong id="avgPerBucket">--</strong>
+                <span id="bucketMeta">Change granularity to explore</span>
+            </div>
+        </section>
+
+        <section class="panel chart-panel">
+            <canvas id="historyChart"></canvas>
+            <div id="chartEmpty" class="empty-state" hidden>
+                Nothing to plot yet. Keep the browser focused and come back!
+            </div>
+        </section>
+
+        <section class="panel">
+            <h3 style="margin-top:0;margin-bottom:18px;">Period breakdown</h3>
+            <div class="period-list" id="periodList"></div>
+            <div id="periodEmpty" class="empty-state" hidden>
+                No buckets in this range. Try expanding your window or switching granularity.
+            </div>
+        </section>
+    </div>
+
+    <script src="chart.min.js"></script>
+    <script src="history.js"></script>
+</body>
+</html>

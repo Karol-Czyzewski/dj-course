@@ -15,11 +15,21 @@ A productivity-focused Chrome extension that **blocks distracting websites** (wi
   - Excludes time when tab is inactive or browser is unfocused
   - Browsing analytics: see your top sites by time spent
 
+- **Focus Insights Dashboard**
+  - Dedicated `history.html` view with daily, weekly, or monthly buckets
+  - Range presets (last 7/30/90 days, this month) plus custom date filters
+  - Visualizes cumulative focus hours and top domains per period
+  - Responsive cards summarizing each bucket for quick auditing
+
 - **User Interface**
   - Clean, modern popup UI
   - Easy configuration of blocked sites
   - Live session timer and per-site time stats
   - Clear all data with one click
+
+- **Data Portability**
+  - Export complete stats (including historical buckets) to JSON
+  - Import a JSON snapshot to restore progress or sync between browsers
 
 - **Local Storage**
   - All data is stored locally (no external servers)
@@ -53,6 +63,21 @@ A productivity-focused Chrome extension that **blocks distracting websites** (wi
 - See time spent on the current site (live, updates every second).
 - View your top 10 sites by time spent.
 - Click "Clear All Data" to reset stats.
+
+### Focus Timeline & Filters
+
+1. In the popup choose **"Focus Timeline & Filters"** or open `history.html` directly.
+2. Pick a granularity (daily/weekly/monthly) via the segmented control.
+3. Apply a preset range or switch to **Custom** and use the date pickers.
+4. Analyze the chart plus bucket cards to understand where your time flows.
+
+### Import / Export Stats
+
+1. Open the stats page (`stats.html`).
+2. In the **Data tools** panel choose:
+  - **Export JSON** to download your current metrics (time totals, history buckets, gotcha counts, blocked sites).
+  - **Import JSON** to load a previously exported snapshot (overwrites matching fields).
+3. Imported data is stored locally only.
 
 ### Wildcard Examples
 

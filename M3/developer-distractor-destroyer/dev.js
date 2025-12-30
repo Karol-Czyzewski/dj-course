@@ -5,7 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
         'gotchaStats', 
         'isBlocking', 
         'blockedWebsites', 
-        'currentSessionTime'
+        'currentSessionTime',
+        'timeHistory'
     ];
 
     function createSection(key, data) {
